@@ -2,146 +2,95 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EPHPHATHA - Custom Flyer Generator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: #f4f4f9;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 500px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        h2 { color: #333; }
-        canvas {
-            border: 1px solid #ccc;
-            margin-top: 15px;
-            max-width: 100%;
-            border-radius: 5px;
-        }
-        input[type="file"], input[type="text"] {
-            width: 80%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #ff9900;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        button:hover { background-color: #e08800; }
-    </style>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://i.imgur.com/G3F2j2X.png">
+    <!-- Main Style File -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-    <h2>I Will Attend!</h2>
-    <p>Upload your photo and type your name to generate your custom flyer.</p>
-    
-    <!-- Inputs -->
-    <input type="file" id="imageLoader" accept="image/*" /><br>
-    <input type="text" id="nameInput" placeholder="Enter Your Name Here" /><br>
-    
-    <!-- Canvas Preview -->
-    <canvas id="imageCanvas"></canvas><br><br>
-    
-    <button id="downloadBtn">Download Flyer</button>
+<!-- Modern Mobile Header -->
+<div class="header-band">
+    <div class="profile-pic"></div>
+    <div class="header-text">
+        <div class="main-title">I WILL ATTEND! CONCERT FLYER</div>
+        <div class="sub-title">EPHPHATHA MEGA YOUTH CONCERT - CAC METROPOLIS</div>
+    </div>
+    <div class="app-icon">
+        <img src="https://i.imgur.com/G3F2j2X.png" alt="App Icon" style="width:100%; height:auto;">
+    </div>
 </div>
 
-<script>
-const canvas = document.getElementById('imageCanvas');
-const ctx = canvas.getContext('2d');
-const imageLoader = document.getElementById('imageLoader');
-const nameInput = document.getElementById('nameInput');
-const downloadBtn = document.getElementById('downloadBtn');
+<div class="app-wrapper">
 
-// Load your transparent frame
-const frame = new Image();
-frame.src = 'frame.png'; // Make sure your template image is named frame.png
+    <!-- Card 1: Flyer Preview -->
+    <div class="card">
+        <div class="flyer-preview">
+            <!-- Canvas is drawn here by JavaScript -->
+            <canvas id="imageCanvas"></canvas>
+        </div>
+        <div class="live-preview-tag">Live preview — updates as you type</div>
+    </div>
 
-let userImage = null;
-
-// Set canvas size when frame loads
-frame.onload = function() {
-    canvas.width = frame.width;
-    canvas.height = frame.height;
-    drawCanvas();
-};
-
-// Handle User Uploading Photo
-imageLoader.addEventListener('change', function(e) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        userImage = new Image();
-        userImage.onload = function() {
-            drawCanvas();
-        };
-        userImage.src = event.target.result;
-    };
-    reader.readAsDataURL(e.target.files[0]);
-});
-
-// Redraw canvas on name typing
-nameInput.addEventListener('input', drawCanvas);
-
-function drawCanvas() {
-    // 1. Clear Canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // 2. Draw User Image first (it goes behind the frame)
-    if (userImage) {
-        // Customize these values so the user photo matches the coordinates/size of your transparent cutout circle.
-        // For a default 1080x1080 canvas, adjust coordinates below:
-        const x = 360;  // Horizontal start point of photo cutout
-        const y = 390;  // Vertical start point of photo cutout
-        const size = 360; // Size of the cutout
+    <!-- Card 2: Steps / Controls -->
+    <div class="card steps-container">
         
-        ctx.save();
-        // Create circle clip for the user's headshot
-        ctx.beginPath();
-        ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(userImage, x, y, size, size);
-        ctx.restore();
-    }
-    
-    // 3. Draw Transparent Frame on top
-    ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
-    
-    // 4. Draw User Name onto the Name Box
-    const name = nameInput.value.toUpperCase();
-    if (name) {
-        ctx.font = "bold 28px Arial";
-        ctx.fillStyle = "#333333"; // Color of text
-        ctx.textAlign = "center";
-        // Adjust these coordinates to match where your name bar is
-        ctx.fillText(name, 540, 605); 
-    }
-}
+        <!-- Step 1: Add Photo -->
+        <div class="step-label">
+            <div class="step-number">1</div>
+            <div>Add your photo</div>
+        </div>
+        
+        <div class="upload-btn-wrapper">
+            <div class="circle-upload-btn">
+                <span class="camera-icon">📷</span>
+                <span>Add Photo</span>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" />
+        </div>
 
-// Download final result
-downloadBtn.addEventListener('click', function() {
-    const link = document.createElement('a');
-    link.download = 'my-ephphatha-flyer.png';
-    link.href = canvas.toDataURL();
-    link.click();
-});
-</script>
+        <!-- Step 2: Your Name -->
+        <div class="step-label">
+            <div class="step-number">2</div>
+            <div>Your name</div>
+        </div>
+        
+        <input type="text" id="nameInput" class="form-input" placeholder="e.g. Adeyemi Joshua" maxlength="30">
+
+        <!-- Step 3: Customize Font -->
+        <div class="step-label">
+            <div class="step-number">3</div>
+            <div>Customize font</div>
+        </div>
+        
+        <select id="fontSelector" class="form-select">
+            <option value="Poppins">Poppins</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Times New Roman">Times New Roman</option>
+        </select>
+        
+        <div class="slider-container">
+            <input type="range" id="fontSizeSlider" class="slider" min="20" max="60" value="46">
+            <span id="fontSizeValue" class="slider-value">46px</span>
+        </div>
+        
+        <div class="auto-shrink-text">Note: Text automatically shrinks to fit the name box.</div>
+
+        <!-- Final Download Button -->
+        <div class="download-container">
+            <button id="downloadBtn" disabled>Download My Flyer</button>
+            <div class="download-subtext">PNG, ready to share on WhatsApp & social media</div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Main Script File -->
+<script src="script.js"></script>
 
 </body>
 </html>

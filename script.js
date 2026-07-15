@@ -19,19 +19,19 @@ frame.src = 'frame.png';
 
 let userImage = null;
 
-// EXACT coordinates calibrated for your 822 x 1024 frame.jpg
-const CROPPING = {
-    centerX: 411,      // Perfect center of your 822px wide template
-    centerY: 485,      // Center of the photo circle on your template
-    radius: 93,        // Matches the circular hole precisely
-    nameBoxX: 545,     // Position to the right of "NAME OF ATTENDEE:" label
-    nameBoxY: 598      // Renders text right on top of the black line
+// Dynamic percentage-based coordinates to align perfectly with your frame layout
+const GEOMETRY = {
+    centerX_pct: 0.50,    // 50% (centered horizontally)
+    centerY_pct: 0.315,   // 31.5% from top (perfect center of the gold shield's circle)
+    radius_pct: 0.115,    // 11.5% of total width (size of the circle)
+    nameBoxY_pct: 0.373,  // 37.3% from top (directly on the "NAME OF ATTENDEE" line)
+    nameBoxX_pct: 0.59    // 59% from left (centered perfectly on top of the blank line "_____")
 };
 
 // Image transformation states for drag-and-scale adjustments
 let imgScale = 1.0;
-let imgX = CROPPING.centerX;
-let imgY = CROPPING.centerY;
+let imgX = 0;
+let imgY = 0;
 let isDragging = false;
 let startX = 0;
 let startY = 0;
@@ -39,10 +39,15 @@ let startY = 0;
 let isPhotoAdded = false;
 let isNameProvided = false;
 
-// Set canvas size when frame loads based on actual image dimensions
+// Set canvas size when frame loads
 frame.onload = function() {
     canvas.width = frame.width;
     canvas.height = frame.height;
+    
+    // Initialize image positions based on loaded template dimensions
+    imgX = canvas.width * GEOMETRY.centerX_pct;
+    imgY = canvas.height * GEOMETRY.centerY_pct;
+    
     drawCanvas();
 };
 
@@ -57,17 +62,18 @@ fileInput.addEventListener('change', (e) => {
                 isPhotoAdded = true;
                 photoAdjustControls.style.display = 'block';
                 
-                // Initialize default fitting scale
-                const defaultSize = CROPPING.radius * 2;
+                // Reset positions to default center of the circle
+                imgX = canvas.width * GEOMETRY.centerX_pct;
+                imgY = canvas.height * GEOMETRY.centerY_pct;
+                
+                // Initialize scale to fit nicely inside the circular crop
+                const targetRadius = canvas.width * GEOMETRY.radius_pct;
+                const defaultSize = targetRadius * 2.2; // slightly larger than crop circle
                 const minDimension = Math.min(userImage.width, userImage.height);
                 imgScale = defaultSize / minDimension;
                 
                 zoomSlider.value = Math.round(imgScale * 100);
                 zoomValue.textContent = zoomSlider.value + '%';
-                
-                // Reset positions to target center
-                imgX = CROPPING.centerX;
-                imgY = CROPPING.centerY;
                 
                 drawCanvas();
                 updateDownloadButtonState();
@@ -104,7 +110,6 @@ function getCanvasMousePos(e) {
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     
-    // Scaling factor map client display back to virtual coordinate plane
     return {
         x: (clientX - rect.left) * (canvas.width / rect.width),
         y: (clientY - rect.top) * (canvas.height / rect.height)
@@ -146,13 +151,17 @@ function drawCanvas() {
     // 1. Clear Canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 2. Draw User Image inside Clip (Draw FIRST, before the frame overlay!)
+    const cropX = canvas.width * GEOMETRY.centerX_pct;
+    const cropY = canvas.height * GEOMETRY.centerY_pct;
+    const cropRadius = canvas.width * GEOMETRY.radius_pct;
+
+    // 2. Draw User Image inside Clip Mask
     if (userImage) {
         ctx.save();
         
         // Define circular crop area
         ctx.beginPath();
-        ctx.arc(CROPPING.centerX, CROPPING.centerY, CROPPING.radius, 0, Math.PI * 2);
+        ctx.arc(cropX, cropY, cropRadius, 0, Math.PI * 2);
         ctx.clip();
         
         // Draw user image centered around (imgX, imgY) with scaling applied
@@ -171,12 +180,14 @@ function drawCanvas() {
     if (name) {
         ctx.save();
         ctx.font = `bold ${fontSizeSlider.value}px '${fontSelector.value}', sans-serif`;
-        ctx.fillStyle = '#111111'; // Sharp dark color matching text fields
-        ctx.textAlign = 'left';    // Align from the left to match the blank line path
-        ctx.textBaseline = 'bottom'; // Rests beautifully on the line path
+        ctx.fillStyle = '#111111'; // Dark aesthetic font color
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom'; // Sits cleanly on top of the line
         
-        // Render name on the white line
-        ctx.fillText(name, CROPPING.nameBoxX, CROPPING.nameBoxY);
+        const textX = canvas.width * GEOMETRY.nameBoxX_pct;
+        const textY = canvas.height * GEOMETRY.nameBoxY_pct;
+        
+        ctx.fillText(name, textX, textY);
         ctx.restore();
     }
 }
@@ -195,7 +206,7 @@ function updateDownloadButtonState() {
 // Download Trigger
 downloadBtn.addEventListener('click', () => {
     const link = document.createElement('a');
-    link.download = `my-concert-flyer-${Date.now()}.png`;
+    link.download = `ephphatha-flyer-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
 });

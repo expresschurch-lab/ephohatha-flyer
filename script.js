@@ -8,34 +8,44 @@ const fontSizeSlider = document.getElementById('fontSizeSlider');
 const fontSizeValue = document.getElementById('fontSizeValue');
 const downloadBtn = document.getElementById('downloadBtn');
 
-// Load your specific frame image
-const frame = new Image();
-frame.src = 'frame.png'; // Must be saved exactly as frame.png in your GitHub repo
+// Zoom & Adjust elements
+const photoAdjustControls = document.getElementById('photoAdjustControls');
+const zoomSlider = document.getElementById('zoomSlider');
+const zoomValue = document.getElementById('zoomValue');
 
-// Reference point for user photo and text alignment
-// This is critical for the cropping function to work
+// Load frame template
+const frame = new Image();
+frame.src = 'frame.png';
+
 let userImage = null;
 
-// Adjust these based on where your transparent circle is on a 1080x1080 canvas
+// Exact geometry parameters for a standard 1080x1080 canvas
 const CROPPING = {
-    centerX: 540,  // X coordinate of the circle's center
-    centerY: 580,  // Y coordinate of the circle's center
-    radius: 175,   // Radius of the transparent hole
-    nameBoxY: 825  // Y coordinate of the center of the name box
+    centerX: 540,      // Centers the circular image horizontally on a 1080px wide canvas
+    centerY: 495,      // Center height of the circular transparent window inside the gold shield
+    radius: 125,       // Radius of the transparent hole
+    nameBoxY: 595      // Vertical line center of the white "NAME OF ATTENDEE" bar
 };
 
-// State to track if both photo and name are provided
+// Image transformation states for drag-and-scale adjustments
+let imgScale = 1.0;
+let imgX = CROPPING.centerX;
+let imgY = CROPPING.centerY;
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+
 let isPhotoAdded = false;
 let isNameProvided = false;
 
-// Set canvas size when the frame loads
+// Set canvas size when frame loads
 frame.onload = function() {
     canvas.width = frame.width;
     canvas.height = frame.height;
     drawCanvas();
 };
 
-// Handle User Photo Upload
+// Handle Photo Upload
 fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -44,6 +54,19 @@ fileInput.addEventListener('change', (e) => {
             userImage = new Image();
             userImage.onload = () => {
                 isPhotoAdded = true;
+                photoAdjustControls.style.display = 'block';
+                
+                // Initialize positions & automatic fitting scale
+                const defaultSize = CROPPING.radius * 2;
+                const minDimension = Math.min(userImage.width, userImage.height);
+                imgScale = defaultSize / minDimension;
+                
+                zoomSlider.value = Math.round(imgScale * 100);
+                zoomValue.textContent = zoomSlider.value + '%';
+                
+                imgX = CROPPING.centerX;
+                imgY = CROPPING.centerY;
+                
                 drawCanvas();
                 updateDownloadButtonState();
             };
@@ -66,65 +89,97 @@ fontSizeSlider.addEventListener('input', () => {
     drawCanvas();
 });
 
-// Handle the main draw and crop logic
+// Zoom Slider Action
+zoomSlider.addEventListener('input', () => {
+    imgScale = zoomSlider.value / 100;
+    zoomValue.textContent = zoomSlider.value + '%';
+    drawCanvas();
+});
+
+// Interactive Drag / Pan Controls directly on Canvas
+function getCanvasMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    // Scaling factor in case canvas size on screen is different from rendering size
+    return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+}
+
+function startDrag(e) {
+    if (!userImage) return;
+    isDragging = true;
+    const pos = getCanvasMousePos(e);
+    startX = pos.x - imgX;
+    startY = pos.y - imgY;
+}
+
+function drag(e) {
+    if (!isDragging || !userImage) return;
+    e.preventDefault();
+    const pos = getCanvasMousePos(e);
+    imgX = pos.x - startX;
+    imgY = pos.y - startY;
+    drawCanvas();
+}
+
+function stopDrag() {
+    isDragging = false;
+}
+
+// Attach Event Listeners to Canvas for drag actions
+canvas.addEventListener('mousedown', startDrag);
+canvas.addEventListener('mousemove', drag);
+window.addEventListener('mouseup', stopDrag);
+
+canvas.addEventListener('touchstart', startDrag, { passive: false });
+canvas.addEventListener('touchmove', drag, { passive: false });
+window.addEventListener('touchend', stopDrag);
+
+// Main Drawing Function
 function drawCanvas() {
     // 1. Clear Canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 2. Draw User Image with Cropping
+    // 2. Draw User Image inside Clip
     if (userImage) {
         ctx.save();
         
-        // Define the circular clipping region
+        // Define circular crop area
         ctx.beginPath();
         ctx.arc(CROPPING.centerX, CROPPING.centerY, CROPPING.radius, 0, Math.PI * 2);
         ctx.clip();
         
-        // Calculate dimensions to fit and center the user photo inside the circle
-        // This is complex logic to ensure it doesn't stretch
-        let drawWidth, drawHeight, offsetX, offsetY;
-        const targetRatio = 1; // Square target ratio for the crop
-        const imgRatio = userImage.width / userImage.height;
-
-        if (imgRatio > targetRatio) {
-            // Wider than tall
-            drawHeight = CROPPING.radius * 2;
-            drawWidth = userImage.width * (drawHeight / userImage.height);
-            offsetX = CROPPING.centerX - (drawWidth / 2);
-            offsetY = CROPPING.centerY - CROPPING.radius;
-        } else {
-            // Taller than wide
-            drawWidth = CROPPING.radius * 2;
-            drawHeight = userImage.height * (drawWidth / userImage.width);
-            offsetX = CROPPING.centerX - CROPPING.radius;
-            offsetY = CROPPING.centerY - (drawHeight / 2);
-        }
+        // Draw user image centered around (imgX, imgY) with scaling applied
+        const w = userImage.width * imgScale;
+        const h = userImage.height * imgScale;
+        ctx.drawImage(userImage, imgX - w / 2, imgY - h / 2, w, h);
         
-        ctx.drawImage(userImage, offsetX, offsetY, drawWidth, drawHeight);
         ctx.restore();
     }
     
-    // 3. Draw the Flyer Frame on top
+    // 3. Draw Template Frame on top
     ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
     
-    // 4. Draw User Name onto the Bar
+    // 4. Draw User Name onto the attendee line
     const name = nameInput.value.trim().toUpperCase();
     if (name) {
         ctx.save();
-        
-        // Set the selected font and size
-        ctx.font = `600 ${fontSizeSlider.value}px '${fontSelector.value}', sans-serif`;
-        ctx.fillStyle = '#111111'; // Text color
+        ctx.font = `bold ${fontSizeSlider.value}px '${fontSelector.value}', sans-serif`;
+        ctx.fillStyle = '#0f0200'; // Match dark font aesthetic
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Ensure name is horizontally centered on the name box bar
-        ctx.fillText(name, CROPPING.centerX, CROPPING.nameBoxY);
+        // Render name on the white line, with an offset to sit nicely on the line
+        ctx.fillText(name, CROPPING.centerX + 75, CROPPING.nameBoxY);
         ctx.restore();
     }
 }
 
-// Update Download Button
+// Update Download Button State
 function updateDownloadButtonState() {
     if (isPhotoAdded && isNameProvided) {
         downloadBtn.disabled = false;
@@ -135,7 +190,7 @@ function updateDownloadButtonState() {
     }
 }
 
-// Trigger the download of the final flyer
+// Download Trigger
 downloadBtn.addEventListener('click', () => {
     const link = document.createElement('a');
     link.download = `my-concert-flyer-${Date.now()}.png`;

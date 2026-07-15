@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EPHPHATHA - Custom Flyer Generator</title>
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="https://i.imgur.com/G3F2j2X.png">
-    <!-- Main Style File -->
     <link rel="stylesheet" href="style.css">
+    <style>
+        .instruction-tip {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
 
@@ -27,11 +33,11 @@
 
     <!-- Card 1: Flyer Preview -->
     <div class="card">
-        <div class="flyer-preview">
+        <div class="flyer-preview" style="position: relative; touch-action: none;">
             <!-- Canvas is drawn here by JavaScript -->
             <canvas id="imageCanvas"></canvas>
         </div>
-        <div class="live-preview-tag">Live preview — updates as you type</div>
+        <div class="live-preview-tag">👉 Drag/pan your photo directly on the preview to adjust!</div>
     </div>
 
     <!-- Card 2: Steps / Controls -->
@@ -51,13 +57,23 @@
             <input type="file" id="fileInput" accept="image/*" />
         </div>
 
+        <!-- Zoom & Adjustment Controls (Visible only after uploading photo) -->
+        <div id="photoAdjustControls" style="display: none; margin-top: 20px; background: #f9f9f9; padding: 12px; border-radius: 8px; border: 1px dashed #2196f3;">
+            <label style="font-size: 12px; font-weight: 600; color: #333; display: block; margin-bottom: 5px;">Adjust Photo Size (Zoom):</label>
+            <div class="slider-container" style="margin-top: 0;">
+                <input type="range" id="zoomSlider" class="slider" min="10" max="300" value="100">
+                <span id="zoomValue" class="slider-value">100%</span>
+            </div>
+            <div class="instruction-tip">Drag the preview image up, down, left, or right to center it perfectly!</div>
+        </div>
+
         <!-- Step 2: Your Name -->
         <div class="step-label">
             <div class="step-number">2</div>
             <div>Your name</div>
         </div>
         
-        <input type="text" id="nameInput" class="form-input" placeholder="e.g. Adeyemi Joshua" maxlength="30">
+        <input type="text" id="nameInput" class="form-input" placeholder="e.g. OBIWALE DAVID" maxlength="35">
 
         <!-- Step 3: Customize Font -->
         <div class="step-label">
@@ -73,11 +89,11 @@
         </select>
         
         <div class="slider-container">
-            <input type="range" id="fontSizeSlider" class="slider" min="20" max="60" value="46">
-            <span id="fontSizeValue" class="slider-value">46px</span>
+            <input type="range" id="fontSizeSlider" class="slider" min="15" max="50" value="32">
+            <span id="fontSizeValue" class="slider-value">32px</span>
         </div>
         
-        <div class="auto-shrink-text">Note: Text automatically shrinks to fit the name box.</div>
+        <div class="auto-shrink-text">Note: Adjust font size to align perfectly inside the white name bar.</div>
 
         <!-- Final Download Button -->
         <div class="download-container">

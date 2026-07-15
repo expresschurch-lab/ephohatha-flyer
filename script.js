@@ -19,12 +19,13 @@ frame.src = 'frame.png';
 
 let userImage = null;
 
-// Exact geometry parameters for a standard 1080x1080 canvas
+// EXACT coordinates calibrated for your 822 x 1024 frame.jpg
 const CROPPING = {
-    centerX: 540,      // Centers the circular image horizontally on a 1080px wide canvas
-    centerY: 495,      // Center height of the circular transparent window inside the gold shield
-    radius: 125,       // Radius of the transparent hole
-    nameBoxY: 595      // Vertical line center of the white "NAME OF ATTENDEE" bar
+    centerX: 411,      // Perfect center of your 822px wide template
+    centerY: 485,      // Center of the photo circle on your template
+    radius: 93,        // Matches the circular hole precisely
+    nameBoxX: 545,     // Position to the right of "NAME OF ATTENDEE:" label
+    nameBoxY: 598      // Renders text right on top of the black line
 };
 
 // Image transformation states for drag-and-scale adjustments
@@ -38,7 +39,7 @@ let startY = 0;
 let isPhotoAdded = false;
 let isNameProvided = false;
 
-// Set canvas size when frame loads
+// Set canvas size when frame loads based on actual image dimensions
 frame.onload = function() {
     canvas.width = frame.width;
     canvas.height = frame.height;
@@ -56,7 +57,7 @@ fileInput.addEventListener('change', (e) => {
                 isPhotoAdded = true;
                 photoAdjustControls.style.display = 'block';
                 
-                // Initialize positions & automatic fitting scale
+                // Initialize default fitting scale
                 const defaultSize = CROPPING.radius * 2;
                 const minDimension = Math.min(userImage.width, userImage.height);
                 imgScale = defaultSize / minDimension;
@@ -64,6 +65,7 @@ fileInput.addEventListener('change', (e) => {
                 zoomSlider.value = Math.round(imgScale * 100);
                 zoomValue.textContent = zoomSlider.value + '%';
                 
+                // Reset positions to target center
                 imgX = CROPPING.centerX;
                 imgY = CROPPING.centerY;
                 
@@ -102,7 +104,7 @@ function getCanvasMousePos(e) {
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     
-    // Scaling factor in case canvas size on screen is different from rendering size
+    // Scaling factor map client display back to virtual coordinate plane
     return {
         x: (clientX - rect.left) * (canvas.width / rect.width),
         y: (clientY - rect.top) * (canvas.height / rect.height)
@@ -144,7 +146,7 @@ function drawCanvas() {
     // 1. Clear Canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 2. Draw User Image inside Clip
+    // 2. Draw User Image inside Clip (Draw FIRST, before the frame overlay!)
     if (userImage) {
         ctx.save();
         
@@ -169,12 +171,12 @@ function drawCanvas() {
     if (name) {
         ctx.save();
         ctx.font = `bold ${fontSizeSlider.value}px '${fontSelector.value}', sans-serif`;
-        ctx.fillStyle = '#0f0200'; // Match dark font aesthetic
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#111111'; // Sharp dark color matching text fields
+        ctx.textAlign = 'left';    // Align from the left to match the blank line path
+        ctx.textBaseline = 'bottom'; // Rests beautifully on the line path
         
-        // Render name on the white line, with an offset to sit nicely on the line
-        ctx.fillText(name, CROPPING.centerX + 75, CROPPING.nameBoxY);
+        // Render name on the white line
+        ctx.fillText(name, CROPPING.nameBoxX, CROPPING.nameBoxY);
         ctx.restore();
     }
 }

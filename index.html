@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPHPHATHA - Custom Flyer Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 { color: #333; }
+        canvas {
+            border: 1px solid #ccc;
+            margin-top: 15px;
+            max-width: 100%;
+            border-radius: 5px;
+        }
+        input[type="file"], input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #ff9900;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #e08800; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>I Will Attend!</h2>
+    <p>Upload your photo and type your name to generate your custom flyer.</p>
+    
+    <!-- Inputs -->
+    <input type="file" id="imageLoader" accept="image/*" /><br>
+    <input type="text" id="nameInput" placeholder="Enter Your Name Here" /><br>
+    
+    <!-- Canvas Preview -->
+    <canvas id="imageCanvas"></canvas><br><br>
+    
+    <button id="downloadBtn">Download Flyer</button>
+</div>
+
+<script>
+const canvas = document.getElementById('imageCanvas');
+const ctx = canvas.getContext('2d');
+const imageLoader = document.getElementById('imageLoader');
+const nameInput = document.getElementById('nameInput');
+const downloadBtn = document.getElementById('downloadBtn');
+
+// Load your transparent frame
+const frame = new Image();
+frame.src = 'frame.png'; // Make sure your template image is named frame.png
+
+let userImage = null;
+
+// Set canvas size when frame loads
+frame.onload = function() {
+    canvas.width = frame.width;
+    canvas.height = frame.height;
+    drawCanvas();
+};
+
+// Handle User Uploading Photo
+imageLoader.addEventListener('change', function(e) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        userImage = new Image();
+        userImage.onload = function() {
+            drawCanvas();
+        };
+        userImage.src = event.target.result;
+    };
+    reader.readAsDataURL(e.target.files[0]);
+});
+
+// Redraw canvas on name typing
+nameInput.addEventListener('input', drawCanvas);
+
+function drawCanvas() {
+    // 1. Clear Canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 2. Draw User Image first (it goes behind the frame)
+    if (userImage) {
+        // Customize these values so the user photo matches the coordinates/size of your transparent cutout circle.
+        // For a default 1080x1080 canvas, adjust coordinates below:
+        const x = 360;  // Horizontal start point of photo cutout
+        const y = 390;  // Vertical start point of photo cutout
+        const size = 360; // Size of the cutout
+        
+        ctx.save();
+        // Create circle clip for the user's headshot
+        ctx.beginPath();
+        ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(userImage, x, y, size, size);
+        ctx.restore();
+    }
+    
+    // 3. Draw Transparent Frame on top
+    ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+    
+    // 4. Draw User Name onto the Name Box
+    const name = nameInput.value.toUpperCase();
+    if (name) {
+        ctx.font = "bold 28px Arial";
+        ctx.fillStyle = "#333333"; // Color of text
+        ctx.textAlign = "center";
+        // Adjust these coordinates to match where your name bar is
+        ctx.fillText(name, 540, 605); 
+    }
+}
+
+// Download final result
+downloadBtn.addEventListener('click', function() {
+    const link = document.createElement('a');
+    link.download = 'my-ephphatha-flyer.png';
+    link.href = canvas.toDataURL();
+    link.click();
+});
+</script>
+
+</body>
+</html>

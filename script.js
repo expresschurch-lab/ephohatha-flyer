@@ -15,17 +15,17 @@ const zoomValue = document.getElementById('zoomValue');
 
 // Load frame template
 const frame = new Image();
-frame.src = 'frame.png'; // Make sure your file is named frame.png or frame.jpg in your repo!
+frame.src = 'frame.png'; // Overwrite this in your repo with your new frame!
 
 let userImage = null;
 
-// Exact 1:1 proportional layout coordinates from your template
+// Exact geometry calculated from your updated 1:1 design template
 const GEOMETRY = {
-    centerX_pct: 0.50,    // Perfectly centered horizontally (50%)
-    centerY_pct: 0.475,   // Center of the gold shield's black opening (47.5%)
-    radius_pct: 0.105,    // Size of the black crop window (10.5%)
-    nameBoxX_pct: 0.63,   // Centered horizontally over the blank line "_____" (63%)
-    nameBoxY_pct: 0.605   // Sits perfectly on top of the black attendee line (60.5%)
+    centerX_pct: 0.492,    // Exact center horizontal position of the new larger circle
+    centerY_pct: 0.447,    // Exact center vertical position of the new larger circle
+    radius_pct: 0.178,     // Precise radius of the new circle (approx 182px on 1024x1024)
+    nameBoxX_pct: 0.50,    // Perfectly centered horizontally in the white rectangle (50%)
+    nameBoxY_pct: 0.686    // Exact vertical center of the white rectangle (68.6%)
 };
 
 // Image transformation states for dragging and zooming
@@ -39,12 +39,12 @@ let startY = 0;
 let isPhotoAdded = false;
 let isNameProvided = false;
 
-// Set canvas size when the frame loads to match its original high-res dimensions
+// Set canvas size when the frame loads
 frame.onload = function() {
     canvas.width = frame.width;
     canvas.height = frame.height;
     
-    // Default image focal point is the center of the frame's circle
+    // Default image focal point
     imgX = canvas.width * GEOMETRY.centerX_pct;
     imgY = canvas.height * GEOMETRY.centerY_pct;
     
@@ -62,11 +62,10 @@ fileInput.addEventListener('change', (e) => {
                 isPhotoAdded = true;
                 photoAdjustControls.style.display = 'block';
                 
-                // Initialize photo position in the center of the circle
                 imgX = canvas.width * GEOMETRY.centerX_pct;
                 imgY = canvas.height * GEOMETRY.centerY_pct;
                 
-                // Fit photo inside the crop window automatically
+                // Adjust scale to comfortably fill the new larger circle size
                 const targetRadius = canvas.width * GEOMETRY.radius_pct;
                 const defaultSize = targetRadius * 2.2; 
                 const minDimension = Math.min(userImage.width, userImage.height);
@@ -84,7 +83,7 @@ fileInput.addEventListener('change', (e) => {
     }
 });
 
-// Live-render update inputs
+// Update inputs
 nameInput.addEventListener('input', () => {
     isNameProvided = nameInput.value.trim() !== "";
     drawCanvas();
@@ -97,14 +96,13 @@ fontSizeSlider.addEventListener('input', () => {
     drawCanvas();
 });
 
-// Scale Photo via Zoom Slider
 zoomSlider.addEventListener('input', () => {
     imgScale = zoomSlider.value / 100;
     zoomValue.textContent = zoomSlider.value + '%';
     drawCanvas();
 });
 
-// Interactive Drag/Pan Logic
+// Drag & Drop logic
 function getCanvasMousePos(e) {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -137,7 +135,6 @@ function stopDrag() {
     isDragging = false;
 }
 
-// Canvas Touch/Mouse Listeners
 canvas.addEventListener('mousedown', startDrag);
 canvas.addEventListener('mousemove', drag);
 window.addEventListener('mouseup', stopDrag);
@@ -146,7 +143,7 @@ canvas.addEventListener('touchstart', startDrag, { passive: false });
 canvas.addEventListener('touchmove', drag, { passive: false });
 window.addEventListener('touchend', stopDrag);
 
-// Canvas Render Loop
+// Render function
 function drawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -154,7 +151,7 @@ function drawCanvas() {
     const cropY = canvas.height * GEOMETRY.centerY_pct;
     const cropRadius = canvas.width * GEOMETRY.radius_pct;
 
-    // 1. Draw User Image inside Circular Crop
+    // 1. Draw User Image cropped to the circle
     if (userImage) {
         ctx.save();
         ctx.beginPath();
@@ -167,17 +164,17 @@ function drawCanvas() {
         ctx.restore();
     }
     
-    // 2. Draw Frame Template on Top
+    // 2. Draw Flyer template layer on top
     ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
     
-    // 3. Draw Attendee Name
+    // 3. Draw Name perfectly inside the new big white rectangle
     const name = nameInput.value.trim().toUpperCase();
     if (name) {
         ctx.save();
         ctx.font = `bold ${fontSizeSlider.value}px '${fontSelector.value}', sans-serif`;
-        ctx.fillStyle = '#0f0200'; // Dark text styling matching template
+        ctx.fillStyle = '#0f0200'; // Dark matching color
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom'; // Renders exactly on top of the black line
+        ctx.textBaseline = 'middle'; // Center-aligned vertically in the box
         
         const textX = canvas.width * GEOMETRY.nameBoxX_pct;
         const textY = canvas.height * GEOMETRY.nameBoxY_pct;
@@ -187,7 +184,6 @@ function drawCanvas() {
     }
 }
 
-// Update Download Button State
 function updateDownloadButtonState() {
     if (isPhotoAdded && isNameProvided) {
         downloadBtn.disabled = false;
@@ -198,7 +194,7 @@ function updateDownloadButtonState() {
     }
 }
 
-// Trigger image download
+// Download Trigger
 downloadBtn.addEventListener('click', () => {
     const link = document.createElement('a');
     link.download = `ephphatha-flyer-${Date.now()}.png`;
